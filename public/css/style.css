@@ -1,0 +1,148 @@
+/* Step indicator: batasi lebar minimum tiap segmen, biarkan overflow scroll horizontal di mobile jika step sangat banyak */
+#step-indicators {
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+#step-indicators::-webkit-scrollbar {
+    display: none;
+}
+.step-ind {
+    min-width: 24px; /* supaya tetap bisa diklik walau ada 10+ step */
+}
+
+@media (max-width: 480px) {
+    .step-ind {
+        min-width: 18px;
+    }
+}
+
+/* ==========================================================
+   INFO PAGE
+========================================================== */
+
+.info-hero{
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    gap:48px;
+
+    padding:48px;
+
+    border-radius:32px;
+
+    background:linear-gradient(
+        135deg,
+        #eefaf5,
+        #ffffff
+    );
+
+    border:1px solid rgba(0,0,0,.06);
+
+    box-shadow:
+        0 8px 24px rgba(0,0,0,.04);
+
+}
+
+.info-hero__content{
+
+    flex:1;
+
+}
+
+.info-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:8px 16px;
+
+    border-radius:999px;
+
+    background:#DCFCE7;
+
+    color:#166534;
+
+    font-size:.85rem;
+
+    font-weight:600;
+
+}
+
+.info-hero__title{
+
+    margin-top:24px;
+
+    font-size:2.5rem;
+
+    line-height:1.2;
+
+    font-weight:800;
+
+    color:#111827;
+
+}
+
+.info-hero__description{
+
+    margin-top:20px;
+
+    max-width:760px;
+
+    color:#6B7280;
+
+    line-height:1.9;
+
+    font-size:1rem;
+
+}
+
+.info-hero__icon{
+
+    width:130px;
+
+    height:130px;
+
+    border-radius:32px;
+
+    background:#DCFCE7;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+.info-hero__icon span{
+
+    font-size:64px;
+
+    color:#15803D;
+
+}
+
+@media (max-width:900px){
+
+.info-hero{
+
+flex-direction:column;
+
+text-align:center;
+
+padding:32px;
+
+}
+
+.info-hero__description{
+
+max-width:none;
+
+}
+
+}
