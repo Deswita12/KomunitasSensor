@@ -63,11 +63,20 @@ async function fetchSmartDevice(id) {
     if (!res.ok) throw new Error("Proxy Smart Citizen error " + id);
     const json = await res.json();
     const sensors = getSensors(json);
+
+    // Cek kapan terakhir device kirim data
+    const lastRecorded = json.last_recorded_at ? new Date(json.last_recorded_at) : null;
+    const minutesSinceUpdate = lastRecorded ? (Date.now() - lastRecorded.getTime()) / 60000 : Infinity;
+    const STALE_THRESHOLD_MINUTES = 30; // anggap offline kalau gak update > 30 menit, sesuaikan sesuai kebutuhan
+
+    const rawState = json.state || "-";
+    const effectiveState = minutesSinceUpdate > STALE_THRESHOLD_MINUTES ? "offline" : rawState;
+
     return {
         id,
         name: json.name || "Device " + id,
-        state: json.state || "-",
-        update: json.last_recorded_at ? new Date(json.last_recorded_at).toLocaleString("id-ID") : "-",
+        state: effectiveState,
+        update: lastRecorded ? lastRecorded.toLocaleString("id-ID") : "-",
         location: getLocation(json),
         temp: valueOf(findSensor(sensors, ["temperature", "air temperature", "°c", "ºc"])),
         rh: valueOf(findSensor(sensors, ["humidity", "relative humidity"])),
@@ -196,24 +205,31 @@ async function renderDevices(devices) {
         const online = d.state === "online" || d.state === "has_published";
         const coord = d.location.latitude !== null && d.location.longitude !== null
             ? `${fmt(d.location.latitude)}, ${fmt(d.location.longitude)}` : '-';
+        const safeName = String(d.name).replace(/'/g, "\\'");
         return `
             <tr class="hover:bg-surface-container-low/50 transition-colors" id="row-${d.id}">
-                <td class="px-5 py-3.5"><span class="font-bold text-on-surface">${d.name}</span><br><span class="text-xs text-outline font-mono">${d.id}</span></td>
-                <td class="px-5 py-3.5"><span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-container border border-primary/20">${online ? 'ONLINE' : 'OFFLINE'}</span></td>
+                <td class="px-5 py-3.5">
+                    <button type="button" onclick="openDeviceHistory('${d.id}', '${safeName}')" class="font-bold text-on-surface hover:text-primary hover:underline text-left">${d.name}</button>
+                    <br><span class="text-xs text-outline font-mono">${d.id}</span>
+                </td>
+                <td class="px-5 py-3.5"><span class="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full ${online ? 'bg-primary-fixed text-on-primary-container border border-primary/20' : 'bg-surface-container-highest text-on-surface-variant border border-outline-variant'}">${online ? 'ONLINE' : 'OFFLINE'}</span></td>
                 <td class="px-5 py-3.5 font-mono font-semibold">${fmt(d.temp)} °C</td>
                 <td class="px-5 py-3.5 font-mono font-semibold">${fmt(d.rh)} %</td>
                 <td class="px-5 py-3.5 font-mono">${fmt(d.iaq)}</td>
                 <td class="px-5 py-3.5 text-xs">${coord}</td>
                 <td class="px-5 py-3.5 text-xs">${d.update}</td>
                 <td class="px-5 py-3.5 text-xs text-on-surface-variant max-w-[260px]" id="ai-${d.id}">
+                    ${online ? `
                     <div class="flex items-center gap-1.5 text-outline animate-pulse">
                         <span class="material-symbols-outlined text-sm">auto_awesome</span> Menganalisis...
-                    </div>
+                    </div>` : `<span class="text-outline">Device offline — analisis tidak tersedia.</span>`}
                 </td>
             </tr>`;
     }).join('');
 
     for (const d of devices) {
+        const online = d.state === "online" || d.state === "has_published";
+        if (!online) continue;
         const analysis = await analyzeDeviceAI(d);
         const cell = document.getElementById(`ai-${d.id}`);
         if (cell) {
@@ -227,6 +243,7 @@ async function renderDevices(devices) {
         }
     }
 }
+
 
 function initMap() {
     if (map) return;
@@ -310,6 +327,76 @@ function drawSensorChart(devices) {
     ctx.fillStyle = "#1b1c1c"; ctx.fillText("Humidity %", w - 117, 28);
 }
 
+let el = {};
+let map, markers = [];
+let historyDeviceId = null;  
+
+function openDeviceHistory(deviceId, deviceName) {
+    historyDeviceId = deviceId;
+    const titleEl = document.getElementById('history-modal-title');
+    if (titleEl) titleEl.textContent = `Riwayat Data — ${deviceName}`;
+
+    const overlay = document.getElementById('history-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.remove('hidden');
+    overlay.classList.add('flex');
+
+    document.querySelectorAll('.history-range-btn').forEach(btn => {
+        btn.classList.toggle('bg-primary', btn.dataset.range === '7');
+        btn.classList.toggle('text-on-primary', btn.dataset.range === '7');
+    });
+
+    loadDeviceHistory(7);
+}
+
+function closeDeviceHistory(event) {
+    if (event && event.target.id !== 'history-modal-overlay') return;
+    const overlay = document.getElementById('history-modal-overlay');
+    if (!overlay) return;
+    overlay.classList.add('hidden');
+    overlay.classList.remove('flex');
+    historyDeviceId = null;
+}
+
+async function loadDeviceHistory(days) {
+    if (!historyDeviceId) return;
+
+    document.querySelectorAll('.history-range-btn').forEach(btn => {
+        const active = Number(btn.dataset.range) === days;
+        btn.classList.toggle('bg-primary', active);
+        btn.classList.toggle('text-on-primary', active);
+        btn.classList.toggle('text-on-surface-variant', !active);
+    });
+
+    const tbody = document.getElementById('history-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-on-surface-variant">Memuat...</td></tr>`;
+
+    try {
+        const res = await fetch(`/api/proxy/smart-citizen/${historyDeviceId}/history?range=${days}d`);
+        if (!res.ok) throw new Error('Gagal memuat riwayat');
+        const json = await res.json();
+        const readings = json.readings || [];
+
+        if (!readings.length) {
+            tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-on-surface-variant">Belum ada data riwayat untuk periode ini.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = readings.slice().reverse().map(r => `
+            <tr>
+                <td class="px-4 py-2 text-xs">${r.recorded_at ? new Date(r.recorded_at).toLocaleString('id-ID') : '-'}</td>
+                <td class="px-4 py-2 font-mono">${fmt(r.temp)} °C</td>
+                <td class="px-4 py-2 font-mono">${fmt(r.rh)} %</td>
+                <td class="px-4 py-2 font-mono">${fmt(r.iaq)}</td>
+                <td class="px-4 py-2 text-xs">${r.state || '-'}</td>
+            </tr>`).join('');
+    } catch (e) {
+        console.error('loadDeviceHistory error:', e);
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-error">Gagal memuat riwayat.</td></tr>`;
+    }
+}
+
 async function loadDashboard() {
     try {
         if (el.deviceTable) el.deviceTable.innerHTML = `<tr><td colspan="8" class="p-5"><div class="p-3 bg-orange-50 text-amber-800 rounded-xl font-semibold">Memuat data sensor...</div></td></tr>`;
@@ -318,7 +405,20 @@ async function loadDashboard() {
         const selected = el.deviceMode?.value || "all";
         const deviceIds = selected === "all" ? SMART_DEVICES : [selected];
         const smartResults = await Promise.allSettled(deviceIds.map(fetchSmartDevice));
-        const devices = smartResults.filter(r => r.status === "fulfilled").map(r => r.value);
+         const devices = smartResults.map((r, i) => {
+            if (r.status === "fulfilled") return r.value;
+            return {
+                id: deviceIds[i],
+                name: 'Device ' + deviceIds[i],
+                state: 'offline',
+                update: '-',
+                location: { city: '-', country: '-', latitude: null, longitude: null },
+                temp: null,
+                rh: null,
+                iaq: null,
+                pressure: null
+            };
+        });
         const bmkgJson = await fetchBmkg(el.adm4Input?.value?.trim() || "36.03.03.1001");
         const bmkg = analyzeBmkg(bmkgJson);
         const risk = computeRisk(devices, bmkg);

@@ -8,4 +8,4 @@
 .env.backup
 .env.production
 .phpunit.result.cache
-docker-compose.override.yml
+docker-compose.override.yml/bootstrap/cache/*.php

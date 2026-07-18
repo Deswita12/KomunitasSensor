@@ -318,7 +318,40 @@
  
     </div>
 </div>
-
+{{-- Modal Riwayat Data Device --}}
+<div id="history-modal-overlay" class="fixed inset-0 bg-black/50 z-[200] hidden items-center justify-center p-4" onclick="closeDeviceHistory(event)">
+    <div class="bg-surface rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-outline-variant">
+            <span class="font-label-caps text-on-surface" id="history-modal-title">Riwayat Data</span>
+            <button onclick="closeDeviceHistory()" class="p-1 rounded-full hover:bg-surface-container transition-colors">
+                <span class="material-symbols-outlined text-on-surface-variant">close</span>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6">
+            <div class="flex gap-2 mb-4">
+                <button type="button" data-range="3" onclick="loadDeviceHistory(3)" class="history-range-btn px-3 py-1.5 rounded-full text-xs font-label-caps border border-outline-variant text-on-surface-variant transition-colors">3 Hari</button>
+                <button type="button" data-range="7" onclick="loadDeviceHistory(7)" class="history-range-btn px-3 py-1.5 rounded-full text-xs font-label-caps border border-outline-variant text-on-surface-variant transition-colors">7 Hari</button>
+                <button type="button" data-range="30" onclick="loadDeviceHistory(30)" class="history-range-btn px-3 py-1.5 rounded-full text-xs font-label-caps border border-outline-variant text-on-surface-variant transition-colors">30 Hari</button>
+            </div>
+            <div class="overflow-x-auto border border-outline-variant rounded-xl">
+                <table class="w-full text-sm">
+                    <thead class="bg-surface-container-low text-on-surface-variant text-xs font-label-caps">
+                        <tr>
+                            <th class="px-4 py-2 text-left">Waktu</th>
+                            <th class="px-4 py-2 text-left">Suhu</th>
+                            <th class="px-4 py-2 text-left">RH</th>
+                            <th class="px-4 py-2 text-left">IAQ</th>
+                            <th class="px-4 py-2 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-outline-variant/30">
+                        <tr><td colspan="5" class="p-4 text-center text-on-surface-variant">Memuat...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 @endsection
 

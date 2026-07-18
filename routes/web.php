@@ -15,10 +15,13 @@ Route::get('/komunitas/{post:slug}', [CommunityController::class, 'show'])->name
 
 Route::post('/bantuan', [HelpRequestController::class, 'store'])->name('bantuan.store');
 Route::get('/data/info', [DashboardController::class, 'info'])->name('data.info');
+Route::get('/komunitas/testimoni/list', [CommunityController::class, 'testimonialsList'])->name('komunitas.testimoni.list');
+// Route::post('/komunitas/testimoni/{testimonial}/like', [CommunityController::class, 'likeTestimonial'])->name('komunitas.testimoni.like');
 
 // Proxy API — throttle sekali saja, prefix sekali saja
 Route::prefix('api/proxy')->middleware('throttle:30,1')->group(function () {
     Route::get('/smart-citizen/{deviceId}', [SensorProxyController::class, 'smartCitizen']);
     Route::get('/bmkg', [SensorProxyController::class, 'bmkg']);
     Route::post('/ai-analysis', [SensorProxyController::class, 'aiAnalysis']);
+
 });

@@ -50,7 +50,7 @@
 
     {{-- Wizard dinamis --}}
     <main class="max-w-[840px] mx-auto px-4 pb-24" id="wizard-section">
-        <div class="sticky top-16 z-40 bg-background pt-4 pb-8">
+        <div class="sticky top-16 z-10 bg-background pt-4 pb-8">
             <div class="flex justify-between mb-4 px-2">
                 <span class="font-label-caps text-primary text-xs sm:text-sm" id="step-title">{{ $steps->first()?->title }}</span>
                 <span class="font-label-caps text-on-surface-variant text-xs sm:text-sm" id="step-counter">
@@ -267,5 +267,6 @@
 @endsection
 
 @push('extra-scripts')
+<script src="{{ asset('js/main.js') }}"></script>
 <script src="{{ asset('js/panduan-wizard.js') }}"></script>
 @endpush
