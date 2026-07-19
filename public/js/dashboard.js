@@ -59,7 +59,7 @@ function getLocation(json) {
 }
 
 async function fetchSmartDevice(id) {
-    const res = await fetch(`/api/proxy/smart-citizen/${id}`);
+    const res = await fetch(`/api/proxy/smart-citizen/${id}`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Proxy Smart Citizen error " + id);
     const json = await res.json();
     const sensors = getSensors(json);
@@ -86,7 +86,7 @@ async function fetchSmartDevice(id) {
 }
 
 async function fetchBmkg(adm4) {
-    const res = await fetch(`/api/proxy/bmkg?adm4=${encodeURIComponent(adm4)}`);
+    const res = await fetch(`/api/proxy/bmkg?adm4=${encodeURIComponent(adm4)}`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Proxy BMKG error");
     return await res.json();
 }
@@ -371,7 +371,7 @@ async function loadDeviceHistory(days) {
     tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-on-surface-variant">Memuat...</td></tr>`;
 
     try {
-        const res = await fetch(`/api/proxy/smart-citizen/${historyDeviceId}/history?range=${days}d`);
+        const res = await fetch(`/api/proxy/smart-citizen/${historyDeviceId}/history?range=${days}d`, { cache: 'no-store' });
         if (!res.ok) throw new Error('Gagal memuat riwayat');
         const json = await res.json();
         const readings = json.readings || [];
