@@ -65,7 +65,7 @@ async function fetchSmartDevice(id) {
     const sensors = getSensors(json);
 
     // Cek kapan terakhir device kirim data
-    const lastRecorded = json.last_recorded_at ? new Date(json.last_recorded_at) : null;
+    const lastRecorded = json.last_reading_at ? new Date(json.last_reading_at) : null;
     const minutesSinceUpdate = lastRecorded ? (Date.now() - lastRecorded.getTime()) / 60000 : Infinity;
     const STALE_THRESHOLD_MINUTES = 30; // anggap offline kalau gak update > 30 menit, sesuaikan sesuai kebutuhan
 
