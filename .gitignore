@@ -9,3 +9,6 @@
 .env.production
 .phpunit.result.cache
 docker-compose.override.yml/bootstrap/cache/*.php
+data_only.sql
+data_only_clean.sql
+*:Zone.Identifier
