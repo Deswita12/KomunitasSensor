@@ -327,8 +327,6 @@ function drawSensorChart(devices) {
     ctx.fillStyle = "#1b1c1c"; ctx.fillText("Humidity %", w - 117, 28);
 }
 
-let el = {};
-let map, markers = [];
 let historyDeviceId = null;  
 
 function openDeviceHistory(deviceId, deviceName) {
