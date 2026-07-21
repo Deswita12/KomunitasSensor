@@ -23,7 +23,8 @@ RUN npm install && npm run build
 
 RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
     && php artisan package:discover --ansi \
-    && chown -R www-data:www-data /var/www
+    && chown -R www-data:www-data /var/www \
+    && php artisan storage:link
 
 COPY docker/nginx/default.conf /etc/nginx/sites-available/default
 # COPY docker/nginx.conf /etc/nginx/sites-available/default
